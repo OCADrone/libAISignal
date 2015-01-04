@@ -1,0 +1,4 @@
+libAISignal
+===========
+
+OCADrone IPC library
