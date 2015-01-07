@@ -19,8 +19,8 @@
 * USA
 */
 
-#ifndef LIBAISIGNAL_SERVER_HH
-#define LIBAISIGNAL_SERVER_HH
+#ifndef LIBAISIGNAL_CHANNEL_HH
+#define LIBAISIGNAL_CHANNEL_HH
 
 #include <stdlib.h>
 #include <time.h>
