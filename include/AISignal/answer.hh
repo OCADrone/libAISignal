@@ -19,8 +19,8 @@
 * USA
 */
 
-#ifndef LIBAIREGISTRY_ANSWER_HH
-#define LIBAIREGISTRY_ANSWER_HH
+#ifndef LIBAISIGNAL_ANSWER_HH
+#define LIBAISIGNAL_ANSWER_HH
 
 #include <string>
 #include <AISignal/commands.hh>

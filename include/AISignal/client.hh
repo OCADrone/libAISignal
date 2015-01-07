@@ -19,8 +19,8 @@
 * USA
 */
 
-#ifndef LIBAIREGISTRY_CLIENT_HH
-#define LIBAIREGISTRY_CLIENT_HH
+#ifndef LIBAISIGNAL_CLIENT_HH
+#define LIBAISIGNAL_CLIENT_HH
 
 #include <string>
 #include <KNM/base.hh>

@@ -19,8 +19,8 @@
 * USA
 */
 
-#ifndef LIBAIREGISTRY_SERVER_HH
-#define LIBAIREGISTRY_SERVER_HH
+#ifndef LIBAISIGNAL_SERVER_HH
+#define LIBAISIGNAL_SERVER_HH
 
 #include <KNM/sync/KThread.hpp>
 #include <KNM/sync/KMutex.hh>
