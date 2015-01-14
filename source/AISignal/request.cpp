@@ -27,8 +27,9 @@ using namespace AISignal;
 
 request::request()
 {
-	command = FETCH;
-	sock 	= NULL;
+	command = SEND;
+	option  = 0;
+	sock 	  = NULL;
 }
 
 /**
@@ -54,6 +55,7 @@ request	&request::operator=(const request &_ref)
 		this->command  = _ref.command;
 		this->data 		 = _ref.data;
 		this->channel  = _ref.channel;
+		this->option   = _ref.option;
 	}
 	return *(this);
 }
@@ -63,16 +65,18 @@ request	&request::operator=(const request &_ref)
  */
 request::request(KSocket *_sock)
 {
-	command = FETCH;
-	sock 	= _sock;
+	command = SEND;
+	option  = 0;
+	sock 	  = _sock;
 }
 
 void 	request::reset()
 {
 	if (sock){sock->close();}
-	command   = FETCH;
+	command   = SEND;
 	data 	    = "";
 	channel 	= "";
+	option    = 0;
 }
 
 request::~request()
@@ -92,7 +96,8 @@ void 			request::flush()
 {
 	data    = "";
 	channel = "";
-	command = FETCH;
+	command = SEND;
+	option  = 0;
 }
 
 /**
@@ -100,11 +105,13 @@ void 			request::flush()
  * @param _path To to access or create.
  * @param _data Data to insert.
  */
-void 	request::set(enum commands _cmd, const string &_path, const string &_data)
+void 	request::set(enum commands _cmd, const string &_path,
+									 const string &_data, int _option)
 {
 	command   = _cmd;
 	data 	    = _path;
 	channel 	= _data;
+	option    = _option;
 }
 
 bool 	request::send()
@@ -142,6 +149,7 @@ bool 	request::receive()
 			sock->receive((int*)&command);
 			sock->receive((int*)&channel_len);
 			sock->receive((int*)&data_len);
+			//sock->receive((int*)&option);
 
 			if (channel_len > 0)
 			{
@@ -163,7 +171,7 @@ bool 	request::receive()
 		}
 		catch (const KError &error)
 		{
-			error.dump();
+			//error.dump();
 			return false;
 		}
 		return true;
@@ -184,4 +192,9 @@ const string 	&request::get_data()
 const string 	&request::get_channel()
 {
 	return channel;
+}
+
+int 					request::get_option()
+{
+	return option;
 }

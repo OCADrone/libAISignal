@@ -1,5 +1,5 @@
 # Makefile for the libAIRegistry libray.
-# Version: 2
+# Version: 3
 #
 # Author       : Jean-Philippe Clipffel
 # Creation date: 29/04/2014
@@ -11,7 +11,7 @@
 
 NAME 						= 		libAISignal.so
 LIB_NAME 				= 		libAISignal.so
-LIB_VERSION 		= 		2
+LIB_VERSION 		= 		4
 
 PATH_ROOT 			= 		.
 PATH_SOURCE 		= 		./source/AISignal

@@ -68,6 +68,12 @@ client::~client()
 	reset();
 }
 
+
+/**
+ * NETWORK CONFIGURATION
+ * =====================
+ */
+
 /**
  * @param _hsock Server socket.
  */
@@ -121,6 +127,8 @@ void 	client::connect()
 		hsock->set_nagle(false);
 		cans.set_sock(hsock);
 		creq.set_sock(hsock);
+
+		receiver.start<AISignal::client, void>(this, &AISignal::client::receive);
 	}
 	else
 		throw KError("AISignal::client::connect", "socket not initialized");
@@ -128,16 +136,60 @@ void 	client::connect()
 
 void 	client::disconnect()
 {
+	cout << "client::disconnect()" << endl;
 	if (hsock)
 		hsock->disconnect();
 	else
 		throw KError("AISignal::client::disconnect", "socket not initialized");
 }
 
+
 /**
- * @param _channel Channel to get new signal from.
+ * ========================
+ * PUBLIC COMMANDS HANDLING
+ * ========================
  */
-const string 	&client::fetch(const string &_channel)
+
+/**
+ * @param _channel Channel to subscribe to.
+ * @param _mode Fetch mode (FIFO, LIFO)
+ */
+void 					client::subscribe(const string &_channel)
+{
+	auto				chan = signals.begin();
+
+	mutex.lock();
+	if (hsock)
+	{
+		cans.flush();
+		creq.flush();
+
+		try
+		{
+			// Init local list
+			chan = signals.find(_channel);
+			if (chan == signals.end())
+			{
+				// Set local channels list
+				signals.emplace(_channel, new list<signal>);
+				// Send server command
+				creq.set(SUBSCRIBE, "", _channel);
+				creq.send();
+			}
+
+		}
+		catch(const KError &error)
+		{
+
+		}
+	}
+	mutex.unlock();
+}
+
+/**
+ * @param _channel Channel to unsubscribe from.
+ */
+void 					client::unsubscribe(const string &_channel)
 {
 	if (hsock)
 	{
@@ -146,36 +198,86 @@ const string 	&client::fetch(const string &_channel)
 
 		try
 		{
-			creq.set(FETCH, "", _channel);
+			creq.set(UNSUBSCRIBE, "", _channel);
 			creq.send();
-			cans.receive();
-			if (cans.get_state())
-				result = cans.get_data();
-			else
-				result.clear();
 		}
-
-		catch (const KError &error)
+		catch(const KError &error)
 		{
-			//error.dump();
-			disconnect();
+
+		}
+	}
+}
+
+/**
+ * @param _channel Channel to setup.
+ * @param _limit Client stack limit.
+ */
+void 					client::set_limit(size_t _limit)
+{
+	limit = _limit;
+}
+
+/**
+ * @param _channel Channel to get new signal from (must subscribe before).
+ */
+AISignal::signal 					client::fetch(const string &_channel,
+																				enum AISignal::mode _mode)
+{
+	auto									  chan = signals.begin();
+	list<signal> 						*sigs;
+	list<signal>::iterator 	itr;
+	AISignal::signal 				copy;
+
+
+	mutex.lock();
+	// Check fif we have channels (aka subscriptions)
+	if (signals.size() < 1)
+	{
+		mutex.unlock();
+		return empty;
+	}
+
+	try
+	{
+		// Get tuple <channel name, channel list> iterator
+		chan = signals.find(_channel);
+
+		if ( chan == signals.end())
+		{
+			mutex.unlock();
+			return empty;
 		}
 
+		// Get channel list pointer
+		sigs = chan->second;
+
+		// Check if we have new signals
+		if (sigs->size() < 1)
+		{
+			mutex.unlock();
+			return empty;
+		}
+
+		if (_mode == FIFO)
+		{
+			itr = sigs->begin();
+		}
+		else
+		{
+			itr = sigs->end();
+			itr--;
+		}
 	}
-	else
-		throw KError("AISignal::client::fetch()", "connection is not configured");
+	catch(...)
+	{
+		mutex.unlock();
+		throw;
+	}
 
-	return result;
-}
-
-const string 	&client::get_data()
-{
-	return result;
-}
-
-bool 	client::get_state()
-{
-	return cans.get_state();
+	mutex.unlock();
+	copy = *itr;
+	sigs->erase(itr);
+	return copy;
 }
 
 /**
@@ -190,11 +292,10 @@ void 		client::send(const string &_data, const string &_channel)
 		{
 			creq.set(SEND, _channel, _data);
 			creq.send();
-			cans.receive();
 		}
 		catch (const KError &error)
 		{
-			//error.dump();
+			error.dump();
 			disconnect();
 		}
 	}
@@ -206,8 +307,41 @@ void 		client::send(const string &_data, const string &_channel)
 	return;
 }
 
+void 											client::receive()
+{
+	auto									  chan = signals.begin();
+	list<signal>						*sigs;
+	list<signal>::iterator 	itr;
+
+	try
+	{
+		while(true)
+		{
+			cans.flush();
+			cans.receive();
+
+			chan = signals.find(cans.get_signal().channel);
+			if (chan != signals.end())
+			{
+				sigs = chan->second;
+				mutex.lock();
+				if ( (sigs->size() + 1) > limit )
+					sigs->pop_front();
+				sigs->push_back(cans.get_signal());
+				mutex.unlock();
+			}
+		}
+	}
+	catch(const KError &error)
+	{
+		mutex.unlock();
+		return;
+	}
+}
+
 void 	client::init()
 {
 	hsock    = NULL;
 	selfsock = false;
+	limit    = 20;
 }

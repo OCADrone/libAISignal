@@ -26,8 +26,9 @@ namespace AISignal
 {
   enum commands
   {
-    FETCH,
-    SEND
+    SUBSCRIBE,    /**< Subscribe to a channel. */
+    UNSUBSCRIBE,  /**< Unsubscribe from a channel. */
+    SEND          /**< Send a signal. */
   };
 }
 

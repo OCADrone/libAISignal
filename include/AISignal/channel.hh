@@ -27,30 +27,34 @@
 #include <string>
 #include <list>
 #include <KNM/sync/KMutex.hh>
-#include <AISignal/filter.hh>
+#include <AISignal/server.hh>
 
 using namespace std;
 using namespace KNM;
 
 namespace AISignal
 {
+  class   server;
+
   class   channel
   {
   public:
-    channel();                            /**< Default constructor. */
-    channel(size_t);                      /**< Construct with a size limit. */
+    channel();                                   /**< Default constructor. */
+    channel(size_t);                             /**< Construct + size limit. */
 
-    void      insert(const string &);     /**< Insert a new signal. */
-    string    *getsig();                  /**< Return a copy of a signal. */
-    size_t    getstate();                 /**< Return current state value. */
+    void      insert(const signal &);           /**< Insert a signal. */
+    void      add_server(AISignal::server *);   /**< Add subscriber.*/
+    void      del_server(AISignal::server *);   /**< Remove subscriber. */
+    //auto      get_server(AISignal::server *);   /**< Return server link. */
 
   private:
-    void            init();               /**< Initialize object. */
+    void            init();     /**< Initialize. */
 
-    list<string>    siglist;              /**< List of signals. */
-    size_t          limit;                /**< Maximum size of signal stack. */
-    KMutex          slock;                /**< Signal stack state mutex. */
-    size_t          state;                /**< Signal stack state. */
+    list<signal>            siglist;    /**< List of signals. */
+    list<AISignal::server*> servers;    /**< Subscribers list. */
+    size_t                  limit;      /**< Maximum size of signal stack. */
+    KMutex                  siglock;    /**< Signal stack state mutex. */
+    KMutex                  srvlock;    /**< Sub. list mutex. */
   };
 }
 

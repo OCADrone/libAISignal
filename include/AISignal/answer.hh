@@ -24,6 +24,7 @@
 
 #include <string>
 #include <AISignal/commands.hh>
+#include <AISignal/signal.hh>
 #include <KNM/base/KError.hh>
 #include <KNM/net/KSocket.hh>
 
@@ -50,19 +51,18 @@ namespace AISignal
 		void 	flush();												/**< Clear buffers. */
 
 		// Packet handling
-		void 	set(bool state,
-					const string & = "");						/**< Set request content. */
-		bool 	send();													/**< Send a request. */
-		bool 	receive();											/**< Receive a request. */
+		void 	set(const signal &);						/**< Set answer content. */
+		void 	set(const string &,
+							const string &);						/**< Set answer content. */
+		bool 	send();													/**< Send answer. */
+		bool 	receive();											/**< Receive answer. */
 
 		// Result handling
-		bool 			get_state();								/**< Return last command state. */
-		const string 	&get_data();						/**< Return last command data. */
+		const signal 	&get_signal();					/**< Return received signal. */
 
 	private:
 		KSocket 	*sock;											/**< Socket. */
-		bool 			state;											/**< Command execution state. */
-		string 		data;												/**< Answer data / failure message. */
+		signal 		sig;												/**< Answer data / failure message. */
 	};
 }
 

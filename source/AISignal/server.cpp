@@ -66,6 +66,7 @@ server::server(KSocket *_csock,
 
 server::~server()
 {
+	cout << "server is destroying itself" << endl;
 	if (csock){csock->disconnect();}
 }
 
@@ -93,6 +94,12 @@ void 	server::set_reglock(KMutex *_siglock)
 	siglock = _siglock;
 }
 
+void 	server::send(const signal &_sig)
+{
+	cans.set(_sig);
+	cans.send();
+}
+
 /**
  * @param _args Thread arguments.
  */
@@ -109,9 +116,9 @@ void 	*server::tmain(void __attribute__((unused))*_args)
 
 		while (1)
 		{
+			creq.flush();
 			if (!creq.receive() ) {break;}
 			handle();
-			if (!cans.send() ) {break;}
 		}
 	}
 	catch(const KError &error)
@@ -136,72 +143,34 @@ void 	server::init()
 
 void 			server::handle()
 {
-	string 	*buffer = nullptr;
-	channel	*chan   = nullptr;
+	channel 	*chan;
+	signal 		sig;
 
-	switch (creq.get_command())
+	switch(creq.get_command())
 	{
-			case FETCH:
-			//siglock->lock();
-			try
-			{
-				chan = *sigtree->find(creq.get_channel());
-
-				if (state != chan->getstate())
-				{
-					buffer = chan->getsig();
-					state  = chan->getstate();
-				}
-
-				if (buffer)
-					cans.set(true, *buffer);
-				else
-					cans.set(false, "");
-			}
-			catch (const KError &error)
-			{
-				cans.set(false);
-				//error.dump();
-			}
-			//siglock->unlock();
+		// SUBSCRIBE
+		case SUBSCRIBE:
+			try{chan = *sigtree->find(creq.get_channel());}
+			catch(...){break;}
+			if (chan)
+				chan->add_server(this);
 			break;
 
+		// UNSUBSCRIBE
+		case UNSUBSCRIBE:
+			try{chan = *sigtree->find(creq.get_channel());}
+			catch(const KError &error){break;}
+			if (chan)
+				chan->del_server(this);
+			break;
 
-
+		// SEND
 		case SEND:
-			//siglock->lock();
-			try
-			{
-				chan = *sigtree->find(creq.get_channel());
-				//cout << "server::case SEND: channel: " << creq.get_channel() << endl;
-			}
-			catch (const KError &error)
-			{
-				//error.dump();
-				//cout << "send: creating node: " << creq.get_channel() << endl;
-				sigtree->insert(creq.get_channel(), new channel());
-			}
-
-			try
-			{
-				chan = *sigtree->find(creq.get_channel());
-				//cout << "chan getted" << endl;
-
-				if (chan)
-					chan->insert(creq.get_data());
-			}
-			catch (const KError &error)
-			{
-				//error.dump();
-			}
-
-			//sigtree->insert(creq.get_path(), /**(new string(*/creq.get_data()/*))*/);
-			//siglock->unlock();
-			cans.set(true);
-			break;
-
-
-		default:
-			cans.set(false);
+			try{chan = *sigtree->find(creq.get_channel());}
+			catch(const KError &error){break;}
+			sig.channel = creq.get_channel();
+			sig.data = creq.get_data();
+			if (chan)
+				chan->insert(sig);
 	}
 }

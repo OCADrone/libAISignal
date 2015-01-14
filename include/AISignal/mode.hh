@@ -19,23 +19,16 @@
 * USA
 */
 
-#ifndef LIBAISIGNAL_SIGNAL_HH
-#define LIBAISIGNAL_SIGNAL_HH
+#ifndef LIBAISIGNAL_MODE_HH
+#define LIBAISIGNAL_MODE_HH
 
-#include <string>
-#include <AISignal/level.hh>
-
-using namespace std;
-//using namespace KNM;
-
-namespace   AISignal
+namespace AISignal
 {
-  struct   signal
+  enum mode
   {
-    string  channel;
-    string  data;
+    FIFO,
+    LIFO
   };
-
 }
 
 #endif

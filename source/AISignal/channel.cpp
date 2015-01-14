@@ -24,7 +24,7 @@
 
 using namespace AISignal;
 
-channel::channel(): limit(0), state(0)
+channel::channel(): limit(0)
 {
   init();
 }
@@ -32,7 +32,7 @@ channel::channel(): limit(0), state(0)
 /**
  * @param _limit Channel size limit.
  */
-channel::channel(size_t _limit): limit(_limit), state(0)
+channel::channel(size_t _limit): limit(_limit)
 {
   init();
 }
@@ -40,33 +40,74 @@ channel::channel(size_t _limit): limit(_limit), state(0)
 /**
  * @param _data Signal content.
  */
-void  channel::insert(const string &_data)
+void  channel::insert(const signal &_data)
 {
-  //slock.lock();
-  if (siglist.size() > limit)
-    siglist.pop_back();
+  auto  itr = servers.begin();
 
-  siglist.push_front(_data);
-  state = (rand() % 10000 + rand() + 100);
-  //slock.unlock();
+  siglock.lock();
+  //cout << "channel::insert()" << endl;
+
+  // Insert code here
+  for (; itr != servers.end(); ++itr)
+  {
+    //cout << "channel::insert() : send to " << *itr << endl;
+    (*itr)->send(_data);
+  }
+
+  siglock.unlock();
 }
 
-string    *channel::getsig()
+void  channel::add_server(AISignal::server *_server)
 {
-  string  *data;
-  auto    itr = siglist.begin();
+  list<AISignal::server*>::iterator  itr;
 
-  data = new string((*itr));
-  return data;
+  srvlock.lock();
+  //cout << "channel::add_server()" << endl;
+
+  for(itr = servers.begin(); itr != servers.end(); itr++)
+  {
+    if ( *itr == _server )
+    {
+      //cout << "-- server already added" << endl;
+      srvlock.unlock();
+      return;
+    }
+  }
+  //cout << "-- adding server " << _server << endl;
+  servers.push_back(_server);
+  srvlock.unlock();
 }
 
-size_t    channel::getstate()
+void  channel::del_server(AISignal::server *_server)
 {
-  return state;
+  list<AISignal::server*>::iterator  itr;
+
+  srvlock.lock();
+  cout << "channel::del_server()" << endl;
+
+  for(itr = servers.begin(); itr != servers.end(); itr++)
+  {
+    if ( *itr == _server )
+    {
+      cout << "-- removing server " << _server << endl;
+      servers.remove(*itr);
+      srvlock.unlock();
+      return;
+    }
+  }
+  cout << "-- server not added" << endl;
+  srvlock.unlock();
 }
 
-void      channel::init()
+/*auto    channel::get_server(AISignal::server *_server)
 {
-  srand(time(NULL));
-  state = (rand() % 10000 + rand() + 100);
+  auto  itr = servers.begin();
+
+  //  for (; itr != servers.end(); )
+  return itr;
+}*/
+
+void  channel::init()
+{
+  return;
 }

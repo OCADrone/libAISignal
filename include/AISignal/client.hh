@@ -23,12 +23,15 @@
 #define LIBAISIGNAL_CLIENT_HH
 
 #include <string>
+#include <map>
+#include <list>
 #include <KNM/base.hh>
 #include <KNM/sync.hh>
 #include <KNM/net.hh>
 #include <KNM/data/KTree.hpp>
 #include <AISignal/request.hh>
 #include <AISignal/answer.hh>
+#include <AISignal/mode.hh>
 
 using namespace std;
 using namespace KNM;
@@ -37,39 +40,54 @@ namespace AISignal
 {
 	/**
 	 * Connect to a signal server.
-	 * Contains a server socket.
+	 * Store signals locally, and send command to server instance.
+	 * Provide methods to subscribe to channels and send signals.
 	 */
 	class 	client
 	{
 	public:
 		client();
-		client(KSocket *);										/**< Build with existing server link. */
-		client(const string &, int = 0);			/**< Build with server link. */
-		void reset();													/**< Reset initial state. */
-		~client();														/**< Destructor. */
+		client(KSocket *);												/**< Build with link. */
+		client(const string &, int = 0);					/**< Build with server link. */
+		void reset();															/**< Reset initial state. */
+		~client();																/**< Destructor. */
 
-		void 	set_server(KSocket *);					/**< Set server from a socket. */
+		// Network settings
+		void 	set_server(KSocket *);							/**< Set server from a socket. */
 		void 	set_server(const string &,
-						   int = 0);									/**< Set server link. */
-		void 	set_address(const string &);		/**< Set server address. */
-		void 	set_port(int);									/**< Set server port. */
-		void 	connect();											/**< Connect to server. */
-		void 	disconnect();										/**< Close server link. */
+						   			 int = 0);								/**< Set server link. */
+		void 	set_address(const string &);				/**< Set server address. */
+		void 	set_port(int);											/**< Set server port. */
+		void 	connect();													/**< Connect to server. */
+		void 	disconnect();												/**< Close server link. */
 
-		const string &fetch(const string &);	/**< Fetch last signal in given channel. */
+		// Signal and channels
+		void 	subscribe(const string &);					/**< Register to channel. */
+		void 	unsubscribe(const string &);				/**< Unregister from channel. */
+		void 	set_limit(size_t);									/**< Set a stack limit. */
+		signal fetch(const string &,
+								 enum AISignal::mode = FIFO);	/**< Fetch in given channel. */
 		void 				 send(const string &,
-											const string &);		/**< Send a new signal to channel. */
-		const string &get_data();							/**< Return last signal content. */
-		bool 				 get_state();							/**< Return last query state. */
+											const string &);				/**< Send signal to channel. */
 
 	private:
-		void 			init();											/**< Initialize object. */
+		void 			init();													/**< Initialize object. */
+		void 			receive();											/**< Receive new signals. */
 
-		KSocket 		*hsock;										/**< Server (Host) link. */
-		bool 				selfsock;									/**< true if sock is self owned. */
-		request 		creq;											/**< Last send request. */
-		answer 			cans;											/**< Last received answer. */
-		string 			result;										/**< Query result. */
+		// Signals and channels
+		map<string, list<signal>* > 	signals;		/**< Signals list. */
+		size_t 												limit;			/**< Signals list max size. */
+		KMutex 												mutex;			/**< Signals list mutex. */
+		signal 												empty;			/**< Default return signal. */
+
+		// Network
+		KSocket 		*hsock;												/**< Server socket. */
+		bool 				selfsock;											/**< True if sock is managed. */
+
+		// Protocol
+		KThread 		receiver;											/**< Signal receiver thread. */
+		request 		creq;													/**< Last send request. */
+		answer 			cans;													/**< Last received answer. */
 	};
 }
 

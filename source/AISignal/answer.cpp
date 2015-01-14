@@ -28,7 +28,6 @@ using namespace AISignal;
 answer::answer()
 {
 	sock  = NULL;
-	state = false;
 }
 
 /**
@@ -47,9 +46,9 @@ answer 	&answer::operator=(const answer &_ref)
 {
 	if (&_ref != this)
 	{
-		sock  = _ref.sock;
-		state = _ref.state;
-		data  = _ref.data;
+		sock        = _ref.sock;
+		sig.channel = _ref.sig.channel;
+		sig.data    = _ref.sig.data;
 	}
 	return (*this);
 }
@@ -60,13 +59,11 @@ answer 	&answer::operator=(const answer &_ref)
 answer::answer(KSocket *_sock)
 {
 	sock  = _sock;
-	state = false;
 }
 
 void 	answer::reset()
 {
 	if (sock){sock->close();}
-	state = false;
 }
 
 answer::~answer()
@@ -84,18 +81,27 @@ void 	answer::set_sock(KSocket *_sock)
 
 void 	answer::flush()
 {
-	state = false;
-	data  = "";
+	sig.channel.clear();
+	sig.data.clear();
 }
 
 /**
- * @param _state Set answer state.
- * @param _data Set answer data.
+ * @param _sig Signal.
  */
-void 	answer::set(bool _state, const string &_data)
+void 	answer::set(const signal &_sig)
 {
-	state = _state;
-	data  = _data;
+	sig.channel = _sig.channel;
+	sig.data    = _sig.data;
+}
+
+/**
+ * @param _channel Signal channel.
+ * @param _data Signal content.
+ */
+void 	answer::set(const string &_channel, const string &_data)
+{
+	sig.channel = _channel;
+	sig.data    = _data;
 }
 
 bool 	answer::send()
@@ -104,9 +110,10 @@ bool 	answer::send()
 	{
 		try
 		{
-			sock->send((int)state);
-			sock->send((int)data.size());
-			if (data.size() > 0) {sock->send(data);}
+			sock->send((int)sig.channel.size());
+			sock->send((int)sig.data.size());
+			if (sig.channel.size() > 0) {sock->send(sig.channel);}
+			if (sig.data.size() > 0) {sock->send(sig.data);}
 		}
 		catch (const KError &error)
 		{
@@ -118,26 +125,37 @@ bool 	answer::send()
 	return false;
 }
 
-bool 	answer::receive()
+bool 		answer::receive()
 {
-	int 	data_len = 0;
-	char 	*buffer  = NULL;
+	int 	channel_len = 0;
+	int 	data_len    = 0;
+	char 	*buffer     = NULL;
 
 	if (sock)
 	{
 		try
 		{
-			sock->receive((int*)&state);
+			sock->receive((int*)&channel_len);
 			sock->receive((int*)&data_len);
+
+			if (channel_len > 0)
+			{
+				buffer = new char[channel_len + 1];
+				memset(buffer, 0, channel_len + 1);
+				sock->receive(buffer, channel_len);
+				sig.channel.assign(buffer);
+				delete[] buffer;
+			}
 
 			if (data_len > 0)
 			{
 				buffer = new char[data_len + 1];
 				memset(buffer, 0, data_len + 1);
 				sock->receive(buffer, data_len);
-				data.assign(buffer);
+				sig.data.assign(buffer);
 				delete[] buffer;
 			}
+
 		}
 		catch (const KError &error)
 		{
@@ -149,12 +167,8 @@ bool 	answer::receive()
 	return false;
 }
 
-bool 	answer::get_state()
-{
-	return state;
-}
 
-const string 	&answer::get_data()
+const signal 	&answer::get_signal()
 {
-	return data;
+	return sig;
 }

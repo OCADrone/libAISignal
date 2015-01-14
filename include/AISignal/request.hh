@@ -54,7 +54,8 @@ namespace AISignal
 		// Packet handling
 		void 	set(enum commands,
 					const string &,
-					const string & = "");						/**< Set request content. */
+					const string & = "",
+					int = 0); 											/**< Set request content. */
 		bool 	send();													/**< Send a request. */
 		bool 	receive();											/**< Receive a request. */
 
@@ -62,12 +63,14 @@ namespace AISignal
 		enum commands get_command();					/**< Return command. */
 		const string 	&get_channel();					/**< Return channel to access. */
 		const string 	&get_data();						/**< Return data to use. */
+		int 					get_option();						/**< Return option. */
 
 	private:
 		KSocket 				*sock;								/**< Socket. */
 		enum commands 	command;							/**< Request type. */
 		string 					channel;							/**< Path to access / create. */
 		string 					data;									/**< Data to insert / update. */
+		int 						option;								/**< Command option. */
 	};
 }
 

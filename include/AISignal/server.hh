@@ -29,11 +29,14 @@
 #include <AISignal/request.hh>
 #include <AISignal/answer.hh>
 #include <AISignal/channel.hh>
+#include <AISignal/signal.hh>
 
 using namespace KNM;
 
 namespace AISignal
 {
+	class 	channel;
+
 	/**
 	 * Dialog with a ::client.
 	 * Network bridge between a registry client and
@@ -53,6 +56,8 @@ namespace AISignal
 		void 	set_client(KSocket *);								/**< Set client socket. */
 		void 	set_regtree(KTree<channel*> *);				/**< Set DB link. */
 		void 	set_reglock(KMutex *);								/**< Set DB mutex. */
+
+		void 	send(const signal &);									/**< Forward signal. */
 
 	private:
 		void 			init();														/**< Initialize object. */
