@@ -83,19 +83,19 @@ void  channel::del_server(AISignal::server *_server)
   list<AISignal::server*>::iterator  itr;
 
   srvlock.lock();
-  cout << "channel::del_server()" << endl;
+  //cout << "channel::del_server()" << endl;
 
   for(itr = servers.begin(); itr != servers.end(); itr++)
   {
     if ( *itr == _server )
     {
-      cout << "-- removing server " << _server << endl;
+      //cout << "-- removing server " << _server << endl;
       servers.remove(*itr);
       srvlock.unlock();
       return;
     }
   }
-  cout << "-- server not added" << endl;
+  //cout << "-- server not added" << endl;
   srvlock.unlock();
 }
 
