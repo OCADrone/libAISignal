@@ -26,8 +26,9 @@ namespace AISignal
 {
   enum mode
   {
-    FIFO,
-    LIFO
+    FIFO,   /**< Return oldest available signal. */
+    LIFO,   /**< Return newest available signal. */
+    SINGLE  /**< Return newest available signal and remove others.*/
   };
 }
 

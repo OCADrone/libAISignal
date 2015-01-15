@@ -262,11 +262,12 @@ AISignal::signal 					client::fetch(const string &_channel,
 		{
 			itr = sigs->begin();
 		}
-		else
+		else if (_mode == LIFO || _mode == SINGLE)
 		{
 			itr = sigs->end();
 			itr--;
 		}
+
 	}
 	catch(...)
 	{
@@ -277,6 +278,8 @@ AISignal::signal 					client::fetch(const string &_channel,
 	mutex.unlock();
 	copy = *itr;
 	sigs->erase(itr);
+	if (_mode == SINGLE)
+		sigs->clear();
 	return copy;
 }
 
